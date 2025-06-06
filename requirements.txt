@@ -7,3 +7,4 @@ langchain-core==0.1.46
 langchain-qdrant==0.1.0
 qdrant-client==1.9.2
 langchain==0.1.16
+pydantic>=1.10.0
