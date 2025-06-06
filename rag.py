@@ -18,9 +18,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
 
-# Environment setup
-os.environ["NVIDIA_API_KEY"] = "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"
-
 # Constants
 DATA_DIR = "./data"
 CHECKPOINT_DIR = "./checkpoints"
@@ -29,9 +26,6 @@ EMBEDDING_MODEL = "NV-Embed-QA"
 LLM_MODEL = "meta/llama-3.3-70b-instruct"
 VECTOR_SIZE = 1024
 
-# Qdrant Cloud Configuration
-QDRANT_URL = "https://f74aa2e4-25d9-4542-9309-f56dec2f5461.us-east4-0.gcp.cloud.qdrant.io"
-QDRANT_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.6y5GIV_9azhox6kK_UpYViX7Qa1asqykYiYVBIRmOFk"
 
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
