@@ -33,6 +33,8 @@ def setup_vector_db():
     """Set up Qdrant Cloud vector database connection."""
     print("🔗 Connecting to Qdrant Cloud...")
     try:
+        QDRANT_URL = os.environ.get("QDRANT_URL")
+        QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY")
         # Initialize Qdrant Cloud client
         qdrant_client = QdrantClient(
             url=QDRANT_URL,
