@@ -74,6 +74,8 @@ def setup_vector_db():
 def test_qdrant_connection():
     """Test connection to Qdrant Cloud."""
     try:
+        QDRANT_URL = os.environ.get("QDRANT_URL")
+        QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY")
         client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
         collections = client.get_collections()
         collection_info = client.get_collection(COLLECTION_NAME)
