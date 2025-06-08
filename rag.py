@@ -91,10 +91,10 @@ class DirectQdrantRetriever(BaseRetriever):
     
     def __init__(self, qdrant_client, embedder, collection_name, k=5):
         super().__init__()
-        self._client = qdrant_client
-        self._embedder = embedder
-        self._collection_name = collection_name
-        self._k = k
+        object.__setattr__(self, '_client', qdrant_client)
+        object.__setattr__(self, '_embedder', embedder)
+        object.__setattr__(self, '_collection_name', collection_name)
+        object.__setattr__(self, '_k', k)
 
     def _get_relevant_documents(self, query: str, *, run_manager=None) -> List[Document]:
         """Get relevant documents using direct Qdrant search."""
