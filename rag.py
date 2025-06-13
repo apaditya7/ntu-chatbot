@@ -21,7 +21,7 @@ from langchain_qdrant import QdrantVectorStore
 # Constants
 DATA_DIR = "./data"
 CHECKPOINT_DIR = "./checkpoints"
-COLLECTION_NAME = "course_documents"
+COLLECTION_NAME = "university_materials"
 EMBEDDING_MODEL = "NV-Embed-QA"
 LLM_MODEL = "meta/llama-3.3-70b-instruct"
 VECTOR_SIZE = 1024
