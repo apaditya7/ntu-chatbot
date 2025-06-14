@@ -316,25 +316,28 @@ def handle_drive_webhook():
         logger.info(f"Drive notification: state={resource_state}, id={resource_id}, changed={changed_fields}")
         
         # Only process folder changes (when files are added)
-        if resource_state == 'update' and 'children' in changed_fields and drive_pipeline:
-            try:
-                # Get all files in the folder and subfolders recursively
-                all_files = drive_pipeline._get_files_recursively(resource_id)
-                
-                # Sort by creation time (most recent first) and take only recent ones
-                recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:5]
-                
-                logger.info(f"Found {len(recent_files)} recent files in folder hierarchy")
-                
-                # Process each recent file
-                for file_info in recent_files:
-                    file_id = file_info['id']
-                    logger.info(f"Processing file from folder: {file_info['name']}")
-                    result = drive_pipeline.process_file(file_id)
-                    logger.info(f"Processed file {file_id}: {result.get('success', False)}")
-                    
-            except Exception as e:
-                logger.error(f"Error processing folder change: {e}")
+       # In webhook handler
+        if resource_state == 'update' and 'children' in changed_fields:
+            # Get the channel token to identify which folder
+            channel_token = headers.get('X-Goog-Channel-Token', '')
+            
+            if 'folder=Courses' in channel_token:
+                correct_folder_id = "1IR0rYh16Ti6OfsDS073MATfCcwE6hRcU"  # Your actual Courses folder
+            elif 'folder=General' in channel_token:
+                correct_folder_id = "1mw4ZtlwefsMyj1L3C16f4-OQJoW4tZKm"  # Your actual General folder
+            else:
+                return 'OK', 200
+            
+            # Use correct_folder_id instead of resource_id
+            all_files = drive_pipeline._get_files_recursively(correct_folder_id)
+            recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:3]
+            logger.info(f"Found {len(recent_files)} recent files to process")
+
+            for file_info in recent_files:
+                file_id = file_info['id']
+                logger.info(f"Processing file: {file_info['name']}")
+                result = drive_pipeline.process_file(file_id)
+                logger.info(f"File {file_info['name']} processed: {result.get('success', False)}")
         
         return 'OK', 200
         
