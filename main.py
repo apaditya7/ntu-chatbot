@@ -342,6 +342,7 @@ def handle_drive_webhook():
         logger.error(f"Error handling drive webhook: {e}")
         return 'Error', 500
 @app.route('/admin/setup-webhook', methods=['POST'])
+@app.route('/admin/setup-webhook', methods=['POST'])
 def setup_drive_webhook():
     """Set up Google Drive webhook for a folder."""
     if not drive_pipeline:
@@ -351,17 +352,39 @@ def setup_drive_webhook():
         data = request.get_json()
         folder_name = data.get('folder_name', 'Courses') if data else 'Courses'
         
-        # Get your Cloud Run URL (update this with your actual URL)
         webhook_url = f"https://ntu-chatbot-876229082962.us-central1.run.app/webhook/drive"
         
-        # Find the folder ID
-        folder_query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
+        # Search for folder more specifically - look for Courses inside NTUGPT
+        if folder_name == 'Courses':
+            # First find NTUGPT folder
+            ntugpt_query = f"name='NTUGPT' and mimeType='application/vnd.google-apps.folder'"
+            ntugpt_results = drive_pipeline.drive_service.files().list(q=ntugpt_query).execute()
+            
+            if not ntugpt_results.get('files'):
+                return jsonify({"error": "NTUGPT folder not found"}), 400
+            
+            ntugpt_folder_id = ntugpt_results['files'][0]['id']
+            
+            # Then find Courses inside NTUGPT
+            folder_query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and '{ntugpt_folder_id}' in parents"
+        else:
+            # For General folder, do the same
+            ntugpt_query = f"name='NTUGPT' and mimeType='application/vnd.google-apps.folder'"
+            ntugpt_results = drive_pipeline.drive_service.files().list(q=ntugpt_query).execute()
+            
+            if not ntugpt_results.get('files'):
+                return jsonify({"error": "NTUGPT folder not found"}), 400
+            
+            ntugpt_folder_id = ntugpt_results['files'][0]['id']
+            folder_query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and '{ntugpt_folder_id}' in parents"
+        
         folder_results = drive_pipeline.drive_service.files().list(q=folder_query).execute()
         
         if not folder_results.get('files'):
-            return jsonify({"error": f"Folder '{folder_name}' not found"}), 400
+            return jsonify({"error": f"Folder '{folder_name}' not found inside NTUGPT"}), 400
         
         folder_id = folder_results['files'][0]['id']
+        logger.info(f"Found correct folder: {folder_name} with ID: {folder_id}")
         
         # Set up webhook channel
         channel_body = {
@@ -384,6 +407,7 @@ def setup_drive_webhook():
         return jsonify({
             "success": True,
             "message": f"Webhook set up for {folder_name}",
+            "folder_id": folder_id,
             "channel_id": watch_response.get('id'),
             "resource_id": watch_response.get('resourceId'),
             "webhook_url": webhook_url,
