@@ -314,22 +314,20 @@ def handle_drive_webhook():
         changed_fields = headers.get('X-Goog-Changed', '')
         
         logger.info(f"Drive notification: state={resource_state}, id={resource_id}, changed={changed_fields}")
-
+        
+        # Only process folder changes (when files are added)
         if resource_state == 'update' and 'children' in changed_fields and drive_pipeline:
             try:
-                query = f"'{resource_id}' in parents and trashed=false"
-                results = drive_pipeline.drive_service.files().list(
-                    q=query,
-                    orderBy='createdTime desc',
-                    pageSize=5, 
-                    fields='files(id,name,mimeType,createdTime)'
-                ).execute()
+                # Get all files in the folder and subfolders recursively
+                all_files = drive_pipeline._get_files_recursively(resource_id)
                 
-                files = results.get('files', [])
-                logger.info(f"Found {len(files)} files in folder")
+                # Sort by creation time (most recent first) and take only recent ones
+                recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:5]
                 
-                # Process each file
-                for file_info in files:
+                logger.info(f"Found {len(recent_files)} recent files in folder hierarchy")
+                
+                # Process each recent file
+                for file_info in recent_files:
                     file_id = file_info['id']
                     logger.info(f"Processing file from folder: {file_info['name']}")
                     result = drive_pipeline.process_file(file_id)
@@ -343,7 +341,6 @@ def handle_drive_webhook():
     except Exception as e:
         logger.error(f"Error handling drive webhook: {e}")
         return 'Error', 500
-
 @app.route('/admin/setup-webhook', methods=['POST'])
 def setup_drive_webhook():
     """Set up Google Drive webhook for a folder."""

@@ -408,7 +408,7 @@ class DriveEmbeddingPipeline:
         query = f"'{folder_id}' in parents and trashed=false"
         results = self.drive_service.files().list(
             q=query,
-            fields='files(id,name,mimeType,parents)'
+            fields='files(id,name,mimeType,parents,createdTime)'  # Added createdTime
         ).execute()
         
         for item in results.get('files', []):
