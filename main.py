@@ -6,7 +6,6 @@ import os
 import logging
 from rag import setup_vector_db, setup_chatbot, chatbot_with_memory, test_qdrant_connection
 
-# Import the drive pipeline
 try:
     from drive_pipeline import DriveEmbeddingPipeline
     DRIVE_PIPELINE_AVAILABLE = True
@@ -17,14 +16,11 @@ except ImportError as e:
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize RAG components
 print("🚀 Starting Qdrant Cloud RAG system...")
 
-# Global variables for RAG components
 vector_db = None
 rag_chain = None
 memory = None
@@ -305,31 +301,42 @@ def handle_drive_webhook():
     """Handle Google Drive webhook notifications."""
     try:
         if request.method == 'GET':
-            # Handle verification challenges
             challenge = request.args.get('challenge')
             if challenge:
                 return challenge, 200
             return 'Webhook endpoint ready', 200
         
-        # Handle POST notifications
         headers = dict(request.headers)
         logger.info(f"Drive webhook received: {headers}")
         
         resource_state = headers.get('X-Goog-Resource-State')
         resource_id = headers.get('X-Goog-Resource-Id') 
-        resource_uri = headers.get('X-Goog-Resource-Uri')
         changed_fields = headers.get('X-Goog-Changed', '')
         
         logger.info(f"Drive notification: state={resource_state}, id={resource_id}, changed={changed_fields}")
-        
-        # Only process relevant changes
-        if resource_state in ['add', 'update', 'change'] and drive_pipeline:
-            # Extract file ID from resource URI or use resource ID
-            file_id = resource_id
-            
-            # Process the file
-            result = drive_pipeline.process_file(file_id)
-            logger.info(f"Processed file {file_id}: {result}")
+
+        if resource_state == 'update' and 'children' in changed_fields and drive_pipeline:
+            try:
+                query = f"'{resource_id}' in parents and trashed=false"
+                results = drive_pipeline.drive_service.files().list(
+                    q=query,
+                    orderBy='createdTime desc',
+                    pageSize=5, 
+                    fields='files(id,name,mimeType,createdTime)'
+                ).execute()
+                
+                files = results.get('files', [])
+                logger.info(f"Found {len(files)} files in folder")
+                
+                # Process each file
+                for file_info in files:
+                    file_id = file_info['id']
+                    logger.info(f"Processing file from folder: {file_info['name']}")
+                    result = drive_pipeline.process_file(file_id)
+                    logger.info(f"Processed file {file_id}: {result.get('success', False)}")
+                    
+            except Exception as e:
+                logger.error(f"Error processing folder change: {e}")
         
         return 'OK', 200
         
@@ -365,7 +372,7 @@ def setup_drive_webhook():
             'type': 'web_hook',
             'address': webhook_url,
             'token': f'folder={folder_name}',
-            'expiration': int((time.time() + 24*60*60) * 1000)  # 24 hours from now
+            'expiration': int((time.time() + 24*60*60) * 1000)
         }
         
         # Create the watch
