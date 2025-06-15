@@ -249,6 +249,7 @@ class DriveEmbeddingPipeline:
                     continue
                 
                 embedding = self.embedder.embed_query(chunk)
+                time.sleep(0.1)  # Rate limiting for API calls
                 
                 chunk_metadata = metadata.copy()
                 chunk_metadata.update({

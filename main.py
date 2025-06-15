@@ -330,7 +330,7 @@ def handle_drive_webhook():
             
             # Use correct_folder_id instead of resource_id
             all_files = drive_pipeline._get_files_recursively(correct_folder_id)
-            recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:3]
+            recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:1]
             logger.info(f"Found {len(recent_files)} recent files to process")
 
             for file_info in recent_files:
