@@ -331,9 +331,11 @@ def handle_drive_webhook():
             # Use correct_folder_id instead of resource_id
             all_files = drive_pipeline._get_files_recursively(correct_folder_id)
             recent_files = sorted(all_files, key=lambda x: x.get('createdTime', ''), reverse=True)[:1]
-            logger.info(f"Found {len(recent_files)} recent files to process")
+            pdf_files = [f for f in recent_files if f['name'].endswith(('.pdf', '.docx', '.doc', '.txt')) and not f['name'].startswith('.')]
 
-            for file_info in recent_files:
+            logger.info(f"Found {len(pdf_files)} valid files to process")
+
+            for file_info in pdf_files:  # Use pdf_files instead of recent_files
                 file_id = file_info['id']
                 logger.info(f"Processing file: {file_info['name']}")
                 result = drive_pipeline.process_file(file_id)
