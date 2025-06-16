@@ -29,8 +29,8 @@ class DriveEmbeddingPipeline:
             api_key=os.environ.get("NVIDIA_API_KEY")
         )
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=500,
+            chunk_overlap=100,
             length_function=len,
         )
         # Use the same collection as your existing chatbot
@@ -249,7 +249,7 @@ class DriveEmbeddingPipeline:
                     continue
                 
                 embedding = self.embedder.embed_query(chunk)
-                time.sleep(0.1)  # Rate limiting for API calls
+                time.sleep(1.0)
                 
                 chunk_metadata = metadata.copy()
                 chunk_metadata.update({
